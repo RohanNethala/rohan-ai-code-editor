@@ -34,6 +34,8 @@ var layout;
 var sourceEditor;
 var stdinEditor;
 var stdoutEditor;
+var codeAssistantEditor;
+var api_key;
 
 var $selectLanguage;
 var $compilerOptions;
@@ -84,7 +86,16 @@ var layoutConfig = {
                     readOnly: true
                 }
             }]
-        }]
+        },{
+            type: "column",
+            content: [{
+                type: "component",
+                componentName: "code-assistant",
+                id: "code-assistant",
+                title: "Code Assistant",
+            }]
+        }
+    ]
     }]
 };
 
@@ -188,6 +199,7 @@ function run() {
 
     let sourceValue = encode(sourceEditor.getValue());
     let stdinValue = encode(stdinEditor.getValue());
+    let codeAssistantValue = encode(codeAssistantEditor.getValue());
     let languageId = getSelectedLanguageId();
     let compilerOptions = $compilerOptions.val();
     let commandLineArguments = $commandLineArguments.val();
@@ -214,6 +226,7 @@ function run() {
             language_id: languageId,
             flavor: flavor,
             stdin: stdinEditor.getValue(),
+            code_assistant: codeAssistantEditor.getValue(),
             compiler_options: compilerOptions,
             command_line_arguments: commandLineArguments
         })), "*");
@@ -334,6 +347,7 @@ function setFontSizeForAllEditors(fontSize) {
     sourceEditor.updateOptions({ fontSize: fontSize });
     stdinEditor.updateOptions({ fontSize: fontSize });
     stdoutEditor.updateOptions({ fontSize: fontSize });
+    codeAssistantEditor.updateOptions({ fontSize: fontSize });  
 }
 
 async function loadLangauges() {
@@ -431,6 +445,7 @@ function setDefaults() {
     setFontSizeForAllEditors(fontSize);
     sourceEditor.setValue(DEFAULT_SOURCE);
     stdinEditor.setValue(DEFAULT_STDIN);
+    codeAssistantEditor.setValue("**********");
     $compilerOptions.val(DEFAULT_COMPILER_OPTIONS);
     $commandLineArguments.val(DEFAULT_CMD_ARGUMENTS);
 
@@ -442,6 +457,7 @@ function setDefaults() {
 function clear() {
     sourceEditor.setValue("");
     stdinEditor.setValue("");
+    codeAssistantEditor.setValue("");
     $compilerOptions.val("");
     $commandLineArguments.val("");
 
@@ -583,6 +599,61 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
         });
 
+        layout.registerComponent("code-assistant", function (container, state) {
+            // Create wrapper div for custom styling
+            const wrapper = document.createElement('div');
+            wrapper.className = 'code-assistant-wrapper';
+            
+            // Create header
+            const header = document.createElement('div');
+            header.className = 'code-assistant-header';
+            header.innerHTML = '<i class="magic icon"></i> Code Assistant';
+            wrapper.appendChild(header);
+            
+            // Create content container for the editor
+            const editorContainer = document.createElement('div');
+            editorContainer.className = 'code-assistant-editor';
+            wrapper.appendChild(editorContainer);
+            
+            // Create and style the button container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'code-assistant-btn';
+            const button = document.createElement('button');
+            button.className = 'ui secondary button';
+            button.innerHTML = '<i class="paper plane icon"></i> Enter API Key';
+            buttonContainer.appendChild(button);
+            // wrapper.appendChild(buttonContainer);
+            const button2 = document.createElement('button2');
+
+            button2.className = 'ui primary button';
+            button2.innerHTML = '<i class="paper plane icon"></i> Chat';
+            buttonContainer.appendChild(button2);
+            wrapper.appendChild(buttonContainer);
+            
+
+            // Add wrapper to the container
+            container.getElement()[0].appendChild(wrapper);
+            
+            // Initialize Monaco editor inside the editor container
+            codeAssistantEditor = monaco.editor.create(editorContainer, {
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                readOnly: state.readOnly,
+                language: "markdown",
+                fontFamily: "JetBrains Mono",
+                minimap: {
+                    enabled: false
+                },
+                wordWrap: 'on'
+            });
+
+            // Add button click handler
+            button.addEventListener('click', handleCodeAssistantSubmit);
+            
+            // Add keyboard shortcut (Ctrl/Cmd + Enter)
+            codeAssistantEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, handleCodeAssistantSubmit);
+        });
+
         layout.on("initialised", function () {
             setDefaults();
             refreshLayoutSize();
@@ -628,6 +699,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 flavor: getSelectedLanguageFlavor(),
                 stdin: stdinEditor.getValue(),
                 stdout: stdoutEditor.getValue(),
+                code_assistant: codeAssistantEditor.getValue(),
                 compiler_options: $compilerOptions.val(),
                 command_line_arguments: $commandLineArguments.val()
             })), "*");
@@ -643,6 +715,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
             if (e.data.stdout) {
                 stdoutEditor.setValue(e.data.stdout);
+            }
+            if (e.data.code_assistant) {
+                codeAssistantEditor.setValue(e.data.code_assistant);
             }
             if (e.data.compiler_options) {
                 $compilerOptions.val(e.data.compiler_options);
@@ -843,4 +918,34 @@ const EXTENSIONS_TABLE = {
 
 function getLanguageForExtension(extension) {
     return EXTENSIONS_TABLE[extension] || { "flavor": CE, "language_id": 43 }; // Plain Text (https://ce.judge0.com/languages/43)
+}
+
+function setAPIKey(input) {
+    API_KEY = input;
+    console.log("API Key set:", API_KEY);
+}
+
+function handleCodeAssistantSubmit() {
+    const content = codeAssistantEditor.getValue();
+    
+    // Clear the editor after getting content
+    codeAssistantEditor.setValue('');
+    
+    // Check if the content is an API key
+    if (content.startsWith("sk-")) { // Assuming API keys start with "sk-"
+        setAPIKey(content);
+    } else {
+        // Process the content if it's not an API key
+        processCodeAssistantInput(content);
+    }
+}
+
+function processCodeAssistantInput(content) {
+    // This is where you handle the input
+    console.log('Code Assistant Input:', content);
+    
+    // Example: Echo the input back as a response
+    const response = `Received: ${content}\n\n---\n\nYour response here`;
+
+    codeAssistantEditor.setValue(response);
 }

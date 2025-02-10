@@ -19,3 +19,53 @@
         display: none !important;
     }
 }
+
+.code-assistant-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--vscode-editor-background);
+}
+
+.code-assistant-header {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--vscode-titleBar-activeBackground);
+    color: var(--vscode-titleBar-activeForeground);
+    border-bottom: 1px solid var(--vscode-panel-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.code-assistant-header i.icon {
+    font-size: 16px;
+    margin: 0;
+}
+
+.code-assistant-editor {
+    flex: 1;
+    overflow: hidden;
+}
+
+.code-assistant-btn {
+    padding: 8px;
+    text-align: right;
+    background: var(--vscode-editor-background);
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.code-assistant-btn button {
+    margin: 0 !important;
+    font-size: 14px !important;
+}
+
+.code-assistant-btn button i.icon {
+    margin: 0 4px 0 0 !important;
+}
+
+/* Dark theme support */
+.vs-dark .code-assistant-wrapper {
+    border-left: 1px solid var(--vscode-panel-border);
+}
